@@ -5,8 +5,10 @@ import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
 import { Dialogflow_V2 } from "react-native-dialogflow"
-// import Speech from '@google-cloud/speech';
-import RNFS from 'react-native-fs';
+import Speech from '@google-cloud/speech';
+import * as FileSystem from 'expo-file-system';
+
+const client = new Speech.SpeechClient();
 
 const recordingOptions = {
   android: {
@@ -41,7 +43,7 @@ export default class App extends React.Component {
         Dialogflow_V2.LANG_ENGLISH,
         'optimum-legacy-264900'
     );
-    
+
 }
 
   state = {
@@ -80,11 +82,11 @@ export default class App extends React.Component {
   onPictureSaved = photo => {
     // console.log(photo.uri);
     MediaLibrary.createAssetAsync(photo.uri);
-  } 
+  }
 
   startRecording = async () => {
     this.setState({ isRecording: true });
-  
+
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: true,
       interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
@@ -101,7 +103,7 @@ export default class App extends React.Component {
       console.log(error);
       this.stopRecording();
     }
-  
+
     this.recording = recording;
     console.log(recording);
   }
@@ -113,6 +115,38 @@ export default class App extends React.Component {
 
       // copy to gallery
       // MediaLibrary.createAssetAsync(this.recording.getURI());
+
+      const model = 'default';
+      const encoding = 'BASE64';
+      const sampleRateHertz = 16000;
+      const languageCode = 'en-US';
+
+      const config = {
+        encoding: encoding,
+        sampleRateHertz: sampleRateHertz,
+        languageCode: languageCode,
+        model: model,
+      };
+
+      FileSystem.readAsStringAsync(this.recording.getURI(), { encoding: FileSystem.EncodingType.Base64 })
+      .then(async (file) => {
+        const audioConverted = { content: file };
+
+        const request = {
+          config: config,
+          audio: audioConverted,
+        };
+
+        const [response] = await client.recognize(request);
+        const transcription = response.results
+          .map(result => result.alternatives[0].transcript)
+          .join('\n');
+        console.log(`Transcription: `, transcription);
+
+      })
+      .catch((err) => {
+        console.log(err);
+      });
 
       // RNFS.readFile(this.recording.getURI(), 'base64')
       // .then(async (convertedFile) =>{
@@ -126,12 +160,12 @@ export default class App extends React.Component {
       //     languageCode: languageCode,
       //     model: model,
       //   };
-        
+
       //   const request = {
       //     config: config,
       //     audio: audioConverted,
       //   };
-  
+
       //   // Detects speech in the audio file
       //   // const [response] = await this.client.recognize(request);
       //   // const transcription = response.results
