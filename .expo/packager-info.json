@@ -2,8 +2,8 @@
   "devToolsPort": 19002,
   "expoServerPort": 19000,
   "packagerPort": 19001,
-  "packagerPid": 8500,
-  "expoServerNgrokUrl": "https://ap-b63.anonymous.visiongo.exp.direct",
-  "packagerNgrokUrl": "https://packager.ap-b63.anonymous.visiongo.exp.direct",
-  "ngrokPid": 12732
+  "packagerPid": 3680,
+  "expoServerNgrokUrl": "https://zk-i5u.anonymous.visiongo.exp.direct",
+  "packagerNgrokUrl": "https://packager.zk-i5u.anonymous.visiongo.exp.direct",
+  "ngrokPid": 696
 }

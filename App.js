@@ -4,6 +4,8 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
+import * as FileSystem from 'expo-file-system';
+
 
 export default class App extends React.Component {
   baseURL = 'https://vision.googleapis.com';
@@ -38,24 +40,30 @@ export default class App extends React.Component {
 
   takePicture = () => {
     if (this.camera) {
-      this.camera.takePictureAsync({ onPictureSaved: this.onPictureSaved });
+      this.camera.takePictureAsync({ onPictureSaved: this.onPictureSaved, base64: true });
     }
   }
 
   onPictureSaved = photo => {
     // console.log(photo.uri);
     MediaLibrary.createAssetAsync(photo.uri);
-    this.sendToGoogle()
-      .then((response) => {
-        this.setState({ googleResults: response });
-        this.setState({ photoTaken: true });
-      });
+    // this.sendToGoogle()
+    //   .then((response) => {
+    //     this.setState({ googleResults: response });
+    //     this.setState({ photoTaken: true });
+    //   });
+    console.log(JSON.stringify(photo.base64.substring(0,200)));
+    this.sendToGoogle(photo.base64)
+    .then((response) => {
+      this.setState({ googleResults: response });
+      this.setState({ photoTaken: true });
+    });
   }
 
-  sendToGoogle = async function() {
+  sendToGoogle = async function(base64Image) {
     try {
       console.log("THE URL IS: " + this.baseURL);
-      let response = await fetch(this.baseURL + '/v1/images:annotate?key=SECRET_KEY', {
+      let response = await fetch(this.baseURL + '/v1/images:annotate?key=AIzaSyC8xIFVpW4OKIP_cMlWYLK7VlL_SQqx1Dw', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -65,7 +73,7 @@ export default class App extends React.Component {
             "requests": [
               {
                 "image": {
-                  "content": "base64_IMAGE"
+                  "content": base64Image
                 },
                 "features": [
                   // {
@@ -85,6 +93,7 @@ export default class App extends React.Component {
             ]
         })
       });
+      console.log("waiting...");
       let responseJson = await response.json();
       console.log("RESPONSE JSON IS: ");
       console.log(JSON.stringify(responseJson));
@@ -99,7 +108,7 @@ export default class App extends React.Component {
       return (
         <View>
           <Text>We found:</Text>
-          { this.state.googleResults.map(annotation => { return (<Text>{annotation.name}</Text>);}) }
+          { this.state.googleResults.map((annotation, index) => { return (<Text key={index} >{annotation.name}</Text>);}) }
         </View>
       );
     }
