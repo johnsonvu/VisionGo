@@ -5,10 +5,7 @@ import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
 import { Dialogflow_V2 } from "react-native-dialogflow"
-import Speech from '@google-cloud/speech';
 import * as FileSystem from 'expo-file-system';
-
-const client = new Speech.SpeechClient();
 
 const recordingOptions = {
   android: {
@@ -105,7 +102,6 @@ export default class App extends React.Component {
     }
 
     this.recording = recording;
-    console.log(recording);
   }
 
   stopRecording = async () => {
@@ -116,34 +112,40 @@ export default class App extends React.Component {
       // copy to gallery
       // MediaLibrary.createAssetAsync(this.recording.getURI());
 
-      const model = 'default';
-      const encoding = 'BASE64';
-      const sampleRateHertz = 16000;
-      const languageCode = 'en-US';
-
-      const config = {
-        encoding: encoding,
-        sampleRateHertz: sampleRateHertz,
-        languageCode: languageCode,
-        model: model,
-      };
-
       FileSystem.readAsStringAsync(this.recording.getURI(), { encoding: FileSystem.EncodingType.Base64 })
       .then(async (file) => {
         const audioConverted = { content: file };
 
         const request = {
-          config: config,
-          audio: audioConverted,
+          queryInput: {
+            audioConfig: {
+              languageCode: "en-US",
+            }
+          },
+          inputAudio: audioConverted,
         };
 
-        const [response] = await client.recognize(request);
-        const transcription = response.results
-          .map(result => result.alternatives[0].transcript)
-          .join('\n');
-        console.log(`Transcription: `, transcription);
-
+        fetch('https://dialogflow.googleapis.com/v2/projects/blind-assist-ridibx/agent/sessions/123456789:detectIntent', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: 'Bearer 7cf6f88c4daf482bb70a49f5cf4a1ac5',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
+        })
+        .then((res) => {
+          console.log("SUCCESS");
+          res.json()
+          .then((data) => {
+            console.log(data);
+          })
+        })
+        .catch((err) => {
+          console.log(err);
+        });
       })
+
       .catch((err) => {
         console.log(err);
       });
