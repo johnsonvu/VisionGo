@@ -10,10 +10,10 @@ import * as Google from 'expo-google-app-auth';
 
 const recordingOptions = {
   android: {
-    extension: '.m4a',
-    outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+    extension: '.wav',
+    outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_DEFAULT,
     audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-    sampleRate: 44100,
+    sampleRate: 16000,
     numberOfChannels: 1,
     bitRate: 128000,
   },
@@ -136,11 +136,14 @@ export default class App extends React.Component {
           queryInput: {
             audioConfig: {
               languageCode: "en-US",
-              audioEncoding: "AUDIO_ENCODING_AMR_WB",
+              audioEncoding: "AUDIO_ENCODING_LINEAR_16",
               sampleRateHertz: 16000
             }
           },
           inputAudio: file,
+          outputAudioConfig: {
+            audioEncoding: 'OUTPUT_AUDIO_ENCODING_LINEAR_16',
+          },
         };
         
         fetch('https://dialogflow.googleapis.com/v2/projects/optimum-legacy-264900/agent/sessions/123456789:detectIntent', {
