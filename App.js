@@ -125,11 +125,11 @@ export default class App extends React.Component {
           inputAudio: audioConverted,
         };
 
-        fetch('https://dialogflow.googleapis.com/v2/projects/blind-assist-ridibx/agent/sessions/123456789:detectIntent', {
+        fetch('https://dialogflow.googleapis.com/v2/projects/optimum-legacy-264900/agent/sessions/123456789:detectIntent?key=AIzaSyAaV857peFDaxeXDNRlSSJ5-5NsaTfH5Nc', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
-            Authorization: 'Bearer 7cf6f88c4daf482bb70a49f5cf4a1ac5',
+            Authorization: 'Bearer 4d31c1aa88a14959a3d5414556316173',
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(request),
