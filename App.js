@@ -130,15 +130,17 @@ export default class App extends React.Component {
 
       FileSystem.readAsStringAsync(this.recording.getURI(), { encoding: FileSystem.EncodingType.Base64 })
       .then(async (file) => {
-        const audioConverted = { content: file };
+        // const audioConverted = { content: file };
 
         const request = {
           queryInput: {
             audioConfig: {
               languageCode: "en-US",
+              audioEncoding: "AUDIO_ENCODING_AMR_WB",
+              sampleRateHertz: 16000
             }
           },
-          inputAudio: audioConverted,
+          inputAudio: file,
         };
         
         fetch('https://dialogflow.googleapis.com/v2/projects/optimum-legacy-264900/agent/sessions/123456789:detectIntent', {
