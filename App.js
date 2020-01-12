@@ -5,7 +5,8 @@ import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
 import { Dialogflow_V2 } from "react-native-dialogflow"
-import SpeechAndroid from 'react-native-android-voice';
+// import Speech from '@google-cloud/speech';
+import RNFS from 'react-native-fs';
 
 const recordingOptions = {
   android: {
@@ -31,8 +32,8 @@ const recordingOptions = {
 export default class App extends React.Component {
   constructor(props) {
     super(props);
-    this.onSpeak = this.onSpeak.bind(this);
     this.recording = null;
+    // this.client = new Speech.SpeechClient();
 
     Dialogflow_V2.setConfiguration(
         "dev-704@optimum-legacy-264900.iam.gserviceaccount.com",
@@ -109,7 +110,36 @@ export default class App extends React.Component {
     this.setState({ isRecording: false });
     try {
       await this.recording.stopAndUnloadAsync();
+
+      // copy to gallery
       // MediaLibrary.createAssetAsync(this.recording.getURI());
+
+      // RNFS.readFile(this.recording.getURI(), 'base64')
+      // .then(async (convertedFile) =>{
+      //   // console.log(res);
+
+      //   const audioConverted = {content: convertedFile };
+
+      //   const config = {
+      //     encoding: encoding,
+      //     sampleRateHertz: sampleRateHertz,
+      //     languageCode: languageCode,
+      //     model: model,
+      //   };
+        
+      //   const request = {
+      //     config: config,
+      //     audio: audioConverted,
+      //   };
+  
+      //   // Detects speech in the audio file
+      //   // const [response] = await this.client.recognize(request);
+      //   // const transcription = response.results
+      //   //   .map(result => result.alternatives[0].transcript)
+      //   //   .join('\n');
+      //   // console.log(`Transcription: `, transcription);
+      // });
+
     } catch (error) {
       console.log(error);
     }
