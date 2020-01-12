@@ -1,9 +1,9 @@
 {
   "devToolsPort": 19002,
   "expoServerPort": 19000,
-  "packagerPort": 19003,
-  "packagerPid": 28323,
+  "packagerPort": 19001,
+  "packagerPid": 2880,
   "expoServerNgrokUrl": "https://ck-mjt.anonymous.visiongo.exp.direct",
   "packagerNgrokUrl": "https://packager.ck-mjt.anonymous.visiongo.exp.direct",
-  "ngrokPid": 28370
+  "ngrokPid": 2939
 }

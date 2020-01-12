@@ -6,6 +6,7 @@ import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
 import { Dialogflow_V2 } from "react-native-dialogflow"
 import * as FileSystem from 'expo-file-system';
+import * as Google from 'expo-google-app-auth';
 
 const recordingOptions = {
   android: {
@@ -47,9 +48,24 @@ export default class App extends React.Component {
     hasPermission: null,
     cameraType: Camera.Constants.Type.back,
     isRecording: false,
+    goodToken: null,
   }
 
   async componentDidMount() {
+    const { type, accessToken, user } = await Google.logInAsync({
+      androidClientId: `211095085143-tshkqcvbua02lt0687k1msmk4kpv5tpt.apps.googleusercontent.com`,
+      scopes: [
+        'https://www.googleapis.com/auth/cloud-platform',
+        'https://www.googleapis.com/auth/dialogflow'
+      ]
+    });
+
+    if (type === 'success') {
+      console.log(user);
+      console.log(accessToken);
+      this.setState({goodToken: accessToken });
+    }
+
     this.getPermissionAsync()
     MediaLibrary.requestPermissionsAsync();
   }
@@ -124,12 +140,12 @@ export default class App extends React.Component {
           },
           inputAudio: audioConverted,
         };
-
-        fetch('https://dialogflow.googleapis.com/v2/projects/optimum-legacy-264900/agent/sessions/123456789:detectIntent?key=AIzaSyAaV857peFDaxeXDNRlSSJ5-5NsaTfH5Nc', {
+        
+        fetch('https://dialogflow.googleapis.com/v2/projects/optimum-legacy-264900/agent/sessions/123456789:detectIntent', {
           method: 'POST',
           headers: {
             Accept: 'application/json',
-            Authorization: 'Bearer 4d31c1aa88a14959a3d5414556316173',
+            Authorization: `Bearer ${this.state.goodToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(request),
