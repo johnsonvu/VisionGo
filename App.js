@@ -1,14 +1,52 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-
+import React from 'react';
+import { Text, View, TouchableOpacity, ToastAndroid } from 'react-native';
+import { Audio } from 'expo-av';
 import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
+import { Dialogflow_V2 } from "react-native-dialogflow"
+import SpeechAndroid from 'react-native-android-voice';
+
+const recordingOptions = {
+  android: {
+    extension: '.m4a',
+    outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+    audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+    sampleRate: 44100,
+    numberOfChannels: 1,
+    bitRate: 128000,
+  },
+  ios: {
+    extension: '.wav',
+    audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
+    sampleRate: 44100,
+    numberOfChannels: 1,
+    bitRate: 128000,
+    linearPCMBitDepth: 16,
+    linearPCMIsBigEndian: false,
+    linearPCMIsFloat: false,
+  },
+}
 
 export default class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.onSpeak = this.onSpeak.bind(this);
+    this.recording = null;
+
+    Dialogflow_V2.setConfiguration(
+        "dev-704@optimum-legacy-264900.iam.gserviceaccount.com",
+        '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCnR6ORxiTbTf5H\nbl2gmH1FXwHS4n7R/jpZCCxheIfyz/BbP2+/CIVEpcdu/lWufGBUysFM8t/tMJVE\nQSpnBXTVdmCinFDKhO/ifNHwURYNesDiDzDupCemRvLWYnNf0mQMHz/hfrhR0Khf\nQLIoY2GvQHdUqkiklnBPoFX5LbdzLlObI0rZVWHNSNYim3EQ6lE7EykJj5hCBqvc\n0X5mJttUeLCbqLt2bP32BsjnNUDhODRc0wOt9oTd+xmS4qPRdS2T+R7ERoZAll5i\nqK5thtXWgjhB1bRaDFk1y8AlFdXIylFPx4u0K22PMQfOkv9nmdaEhX9/1ZlAMx5K\nr9kRUuwfAgMBAAECggEAAXjrHXqEfYeotXaTuA5Pip+aSQG5rbMn+VD4mbJcDqI6\nPTCy6kKyxZa99CH58sC2f63kg1RfQzEFHKYu2jGdRHm3wlv6MWYiebhb3Vp2sA9a\nCO4ATMFrdeu0RyMeXS62tw1EByyR27/TPjoNYgyfN1HWcGDVUIQ1yzBKlsMKanxE\nv2Z6rNmu1RlZTUQNiTHqoYVyjBV+j8LH4RrWn6r5k+8mogl6T4WuwDWaYkkX7ldU\nPhcL4w6yy9xQH1JoZfpqmnjnEcQviJopcXJGASExFypdLIh5qHXL1f/FoLz1jtRO\nlldLzUEPL54gZJ8rgKI4glX/wVdYqnqs2fmCHZ2mrQKBgQDelhgT4ctLYHqhnWtB\nNm0xPz3CG5t4Tc0+nRWsYR/2Gedadw4h/cgrFZ08ab9TG4krbQGBCNE9dnMxnYKX\nqlrplV1vhqcMnNpjqBqqkkVgSjF0uyH/RGVwXqNmVhrJuAmb1hZCuVaU15Qhliyo\n2lGegM8aAmmHgaQliFodd8p2NQKBgQDAZCOEMLR2rdDpd36uFEc0y8tP6WxUpzh6\nGJUbsCSYV+ezQhFPbiS9U371M/KKiZS9TeyXrfvZKtRSVlUmiR4AcCUYymrAX01N\n97QOVC3CnHXkfLlkV1rjT05jMqZMJAtOAPTA7p1S5/8fb0Fflsx7hXJ0R8A9nDv7\nWv2+8niTgwKBgQCkVQoHu788skk3gqJJ7iXlovw0j+9TfZVXceAreTWAm5VMG/PK\nMrSS4o1IqgYAFKdL8VmX62uXxhi7+78LvFEMfSMTkMVKMY+m3dh6MC2aLoye0v4B\nmXyO3sAicNWsMfyeGgwrTOxYTWTm+xmTvENgE1dTq44/5f3LXAS0FtnaNQKBgGLR\njKSTV741nT6tz/WeGMz3eGB9ZtU8ZvfftIbaPJG7ZRlf8AA6dMiCII3VttiNvkZV\nxhZKmTd8lj4MdgQrHavf7k4Dej2BNfW8K1HIzxBMyQkpPxhY/igPThYJp/0n7l6M\ngyqt5UT2QMZmoM92Z2Vyr80mJYn/u5dprzfq1x/9AoGAZUDWKolMc+Clq/zGdYPi\nDzWNGSvidwJgOMyyOvcIhwSZBkW0+M1MVwefPK1GixVYOQdqfA4H+RxAxgy9m9uP\nQsX5O2lOpoipVebNBnTjOepkHUFsRadxTfPC9uwjWySKUQAetuLX9TwG+tFcQe9A\n4ZnaFDx0gpZqluKU3EsbY7k=\n-----END PRIVATE KEY-----\n',
+        Dialogflow_V2.LANG_ENGLISH,
+        'optimum-legacy-264900'
+    );
+    
+}
+
   state = {
     hasPermission: null,
     cameraType: Camera.Constants.Type.back,
+    isRecording: false,
   }
 
   async componentDidMount() {
@@ -18,7 +56,7 @@ export default class App extends React.Component {
 
   getPermissionAsync = async () => {
     // Camera Permission
-    const { status } = await Permissions.askAsync(Permissions.CAMERA);
+    const { status } = await Permissions.askAsync(Permissions.CAMERA, Permissions.AUDIO_RECORDING);
     this.setState({ hasPermission: status === 'granted' });
   }
 
@@ -42,6 +80,40 @@ export default class App extends React.Component {
     // console.log(photo.uri);
     MediaLibrary.createAssetAsync(photo.uri);
   } 
+
+  startRecording = async () => {
+    this.setState({ isRecording: true });
+  
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
+      playsInSilentModeIOS: true,
+      interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX,
+      playThroughEarpieceAndroid: true,
+    });
+
+    const recording = new Audio.Recording();
+    try {
+      await recording.prepareToRecordAsync(recordingOptions);
+      await recording.startAsync();
+    } catch (error) {
+      console.log(error);
+      this.stopRecording();
+    }
+  
+    this.recording = recording;
+    console.log(recording);
+  }
+
+  stopRecording = async () => {
+    this.setState({ isRecording: false });
+    try {
+      await this.recording.stopAndUnloadAsync();
+      // MediaLibrary.createAssetAsync(this.recording.getURI());
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   render(){
     // check permissions
@@ -68,6 +140,22 @@ export default class App extends React.Component {
                 <Text>Take Photo</Text>
               </TouchableOpacity>
 
+              <TouchableOpacity
+                style={{
+                  alignSelf: 'flex-end',
+                  alignItems: 'center',
+                  backgroundColor: 'transparent',
+                }}
+
+                onPressIn={this.startRecording}
+                onPressOut={this.stopRecording}
+
+                >
+                <Text>
+                  {this.state.isRecording ? 'Recording...' : 'Start recording'}
+                </Text>
+              </TouchableOpacity>
+
               {/* Switch camera */}
               {/* <TouchableOpacity
                 style={{
@@ -85,3 +173,5 @@ export default class App extends React.Component {
     );
   }
 }
+
+module.exports = App;
