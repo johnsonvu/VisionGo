@@ -5,10 +5,12 @@ import { Camera } from 'expo-camera';
 import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
+import * as Speech from 'expo-speech';
 
 
 export default class App extends React.Component {
   baseURL = 'https://vision.googleapis.com';
+  tellUserWait = 'One moment please';
 
   state = {
     hasPermission: null,
@@ -42,18 +44,20 @@ export default class App extends React.Component {
   takePicture = () => {
     if (this.camera) {
       this.setState({ processing: true });
-      console.log("HELLPPPPPPPPPP");
+      Speech.speak(this.tellUserWait, {});
       this.camera.takePictureAsync({ onPictureSaved: this.onPictureSaved, base64: true });
     }
   }
 
   onPictureSaved = photo => {
-    console.log("HELLPPPPPPPPPP2");
     MediaLibrary.createAssetAsync(photo.uri);
     console.log(JSON.stringify(photo.base64.substring(0,200)));
     this.sendToGoogle(photo.base64)
     .then((response) => {
-      this.setState({ processing: false, googleResults: response });
+      let itemsSeen = response.map(annotation => annotation.name);
+      this.setState({ processing: false, googleResults: itemsSeen });
+      let itemsForSpeech = this.formatToSpeech(itemsSeen);
+      Speech.speak(itemsForSpeech, {});
       this.setState({ photoTaken: true });
     });
   }
@@ -99,12 +103,21 @@ export default class App extends React.Component {
     }
   }
 
+  formatToSpeech = (items) => {
+    console.log("items are: ");
+    console.log(JSON.stringify(items));
+    let spiel = 'In front is: ';
+    items.slice(0, items.length-1).forEach(item => { spiel += ' ' + item + ','});
+    spiel += "and " + items[items.length-1];
+    return spiel;
+  }
+
   render(){
     if(this.state.photoTaken){
       return (
         <View>
           <Text>We found:</Text>
-          { this.state.googleResults.map((annotation, index) => { return (<Text key={index} >{annotation.name}</Text>);}) }
+          { this.state.googleResults.map((item, index) => { return (<Text key={index} >{item}</Text>);}) }
         </View>
       );
     }
