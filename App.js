@@ -8,31 +8,32 @@ import { Dialogflow_V2 } from "react-native-dialogflow"
 import * as FileSystem from 'expo-file-system';
 import * as Google from 'expo-google-app-auth';
 
-const recordingOptions = {
-  android: {
-    extension: '.wav',
-    outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_DEFAULT,
-    audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-    sampleRate: 16000,
-    numberOfChannels: 1,
-    bitRate: 128000,
-  },
-  ios: {
-    extension: '.wav',
-    audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_HIGH,
-    sampleRate: 44100,
-    numberOfChannels: 1,
-    bitRate: 128000,
-    linearPCMBitDepth: 16,
-    linearPCMIsBigEndian: false,
-    linearPCMIsFloat: false,
-  },
-}
 
 export default class App extends React.Component {
+  recordingOptions = {
+    android: {
+      extension: '.3gp',
+      outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_THREE_GPP,
+      audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AMR_WB,
+      sampleRate: 16000,
+      numberOfChannels: 2,
+      bitRate: 128000
+    },
+    ios: {
+      extension: '.caf',
+      audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MIN,
+      sampleRate: 44100,
+      numberOfChannels: 2,
+      bitRate: 128000,
+      linearPCMBitDepth: 16,
+      linearPCMIsBigEndian: false,
+      linearPCMIsFloat: false
+    },
+  };
+  recording = null;
   constructor(props) {
     super(props);
-    this.recording = null;
+    // this.recording = null;
     // this.client = new Speech.SpeechClient();
 
     Dialogflow_V2.setConfiguration(
@@ -98,6 +99,7 @@ export default class App extends React.Component {
   }
 
   startRecording = async () => {
+    console.log("RECORDING");
     this.setState({ isRecording: true });
 
     await Audio.setAudioModeAsync({
@@ -110,7 +112,9 @@ export default class App extends React.Component {
 
     const recording = new Audio.Recording();
     try {
-      await recording.prepareToRecordAsync(recordingOptions);
+      await recording.prepareToRecordAsync(this.recordingOptions);
+      
+      console.log("RECORDING2");
       await recording.startAsync();
     } catch (error) {
       console.log(error);
@@ -128,48 +132,53 @@ export default class App extends React.Component {
       // copy to gallery
       // MediaLibrary.createAssetAsync(this.recording.getURI());
 
-      FileSystem.readAsStringAsync(this.recording.getURI(), { encoding: FileSystem.EncodingType.Base64 })
-      .then(async (file) => {
-        // const audioConverted = { content: file };
+      let file = await FileSystem.readAsStringAsync(this.recording.getURI(), { encoding: FileSystem.EncodingType.Base64 });
 
-        const request = {
-          queryInput: {
-            audioConfig: {
-              languageCode: "en-US",
-              audioEncoding: "AUDIO_ENCODING_LINEAR_16",
-              sampleRateHertz: 16000
-            }
-          },
-          inputAudio: file,
-          outputAudioConfig: {
-            audioEncoding: 'OUTPUT_AUDIO_ENCODING_LINEAR_16',
-          },
-        };
-        
-        fetch('https://dialogflow.googleapis.com/v2/projects/optimum-legacy-264900/agent/sessions/123456789:detectIntent', {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${this.state.goodToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(request),
-        })
-        .then((res) => {
-          console.log("SUCCESS");
-          res.json()
-          .then((data) => {
-            console.log(data);
-          })
-        })
-        .catch((err) => {
-          console.log(err);
-        });
-      })
+      // const audioConverted = { content: file };
+      console.log("My audio file: ");
+      console.log(JSON.stringify(file));
 
-      .catch((err) => {
-        console.log(err);
+      const request = {
+        queryInput: {
+          audioConfig: {
+            languageCode: "en-us",
+            audioEncoding: "AUDIO_ENCODING_AMR_WB",
+            sampleRateHertz: 16000
+          }
+        },
+        inputAudio: file
+      };
+      
+      // let response = await fetch('https://dialogflow.googleapis.com/v2/projects/optimum-legacy-264900/agent/sessions/123456789:detectIntent', {
+      let response = await fetch('https://dialogflow.googleapis.com/v2beta1/projects/nwhacks2020-264900/agent/sessions/123456789:detectIntent', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${this.state.goodToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
       });
+
+      console.log("response:");
+      console.log(JSON.stringify(response));
+      let responseJson = await response.json();
+
+      console.log("Done");
+      console.log("Response: ");
+      console.log(JSON.stringify(responseJson));
+
+
+      // .then((res) => {
+      //   console.log("SUCCESS");
+      //   res.json()
+      //   .then((data) => {
+      //     console.log(data);
+      //   })
+      // })
+      // .catch((err) => {
+      //   console.log(err);
+      // });
 
       // RNFS.readFile(this.recording.getURI(), 'base64')
       // .then(async (convertedFile) =>{
@@ -214,6 +223,9 @@ export default class App extends React.Component {
     // render app
     return (
         <View style={{ flex: 1 }}>
+        <Text>
+          {this.state.isRecording ? 'Recording...' : 'Start recording'}
+        </Text>
           <Camera style={{ flex: 1 }} type={this.state.cameraType}  ref={ref => {this.camera = ref}}>
             <View style={{flex:1, flexDirection:"row",justifyContent:"space-between",margin:30}}>
               <TouchableOpacity
