@@ -6,9 +6,13 @@ import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
 
 export default class App extends React.Component {
+  baseURL = 'https://vision.googleapis.com';
+
   state = {
     hasPermission: null,
     cameraType: Camera.Constants.Type.back,
+    photoTaken: false,
+    googleResults: []
   }
 
   async componentDidMount() {
@@ -41,9 +45,64 @@ export default class App extends React.Component {
   onPictureSaved = photo => {
     // console.log(photo.uri);
     MediaLibrary.createAssetAsync(photo.uri);
-  } 
+    this.sendToGoogle()
+      .then((response) => {
+        this.setState({ googleResults: response });
+        this.setState({ photoTaken: true });
+      });
+  }
+
+  sendToGoogle = async function() {
+    try {
+      console.log("THE URL IS: " + this.baseURL);
+      let response = await fetch(this.baseURL + '/v1/images:annotate?key=SECRET_KEY', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            "requests": [
+              {
+                "image": {
+                  "content": "base64_IMAGE"
+                },
+                "features": [
+                  // {
+                  //   "maxResults": 10,
+                  //   "type": "TYPE_UNSPECIFIED"
+                  // },
+                  // {
+                  //   "maxResults": 10,
+                  //   "type": "PRODUCT_SEARCH"
+                  // },
+                  {
+                    "maxResults": 10,
+                    "type": "OBJECT_LOCALIZATION"
+                  }
+                ]
+              }
+            ]
+        })
+      });
+      let responseJson = await response.json();
+      console.log("RESPONSE JSON IS: ");
+      console.log(JSON.stringify(responseJson));
+      return responseJson.responses[0].localizedObjectAnnotations;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   render(){
+    if(this.state.photoTaken){
+      return (
+        <View>
+          <Text>We found:</Text>
+          { this.state.googleResults.map(annotation => { return (<Text>{annotation.name}</Text>);}) }
+        </View>
+      );
+    }
     // check permissions
     const { hasPermission } = this.state;
     if (hasPermission === null) {
