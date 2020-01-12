@@ -14,7 +14,8 @@ export default class App extends React.Component {
     hasPermission: null,
     cameraType: Camera.Constants.Type.back,
     photoTaken: false,
-    googleResults: []
+    googleResults: [],
+    processing: false
   }
 
   async componentDidMount() {
@@ -40,22 +41,19 @@ export default class App extends React.Component {
 
   takePicture = () => {
     if (this.camera) {
+      this.setState({ processing: true });
+      console.log("HELLPPPPPPPPPP");
       this.camera.takePictureAsync({ onPictureSaved: this.onPictureSaved, base64: true });
     }
   }
 
   onPictureSaved = photo => {
-    // console.log(photo.uri);
+    console.log("HELLPPPPPPPPPP2");
     MediaLibrary.createAssetAsync(photo.uri);
-    // this.sendToGoogle()
-    //   .then((response) => {
-    //     this.setState({ googleResults: response });
-    //     this.setState({ photoTaken: true });
-    //   });
     console.log(JSON.stringify(photo.base64.substring(0,200)));
     this.sendToGoogle(photo.base64)
     .then((response) => {
-      this.setState({ googleResults: response });
+      this.setState({ processing: false, googleResults: response });
       this.setState({ photoTaken: true });
     });
   }
@@ -63,7 +61,7 @@ export default class App extends React.Component {
   sendToGoogle = async function(base64Image) {
     try {
       console.log("THE URL IS: " + this.baseURL);
-      let response = await fetch(this.baseURL + '/v1/images:annotate?key=AIzaSyC8xIFVpW4OKIP_cMlWYLK7VlL_SQqx1Dw', {
+      let response = await fetch(this.baseURL + '/v1/images:annotate?key=SECRET_KEY', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -76,14 +74,6 @@ export default class App extends React.Component {
                   "content": base64Image
                 },
                 "features": [
-                  // {
-                  //   "maxResults": 10,
-                  //   "type": "TYPE_UNSPECIFIED"
-                  // },
-                  // {
-                  //   "maxResults": 10,
-                  //   "type": "PRODUCT_SEARCH"
-                  // },
                   {
                     "maxResults": 10,
                     "type": "OBJECT_LOCALIZATION"
@@ -97,9 +87,15 @@ export default class App extends React.Component {
       let responseJson = await response.json();
       console.log("RESPONSE JSON IS: ");
       console.log(JSON.stringify(responseJson));
-      return responseJson.responses[0].localizedObjectAnnotations;
+      if(responseJson && responseJson.responses && responseJson.responses.length>0){
+        return responseJson.responses[0].localizedObjectAnnotations;
+      }
+      else{
+        return [];
+      }
     } catch (error) {
       console.error(error);
+      return [];
     }
   }
 
@@ -112,6 +108,7 @@ export default class App extends React.Component {
         </View>
       );
     }
+    
     // check permissions
     const { hasPermission } = this.state;
     if (hasPermission === null) {
@@ -131,7 +128,7 @@ export default class App extends React.Component {
                   alignItems: 'center',
                   backgroundColor: 'transparent',
                 }}
-                onPress={()=>this.takePicture()}
+                onPress={()=>{ if(!this.state.processing) this.takePicture(); }}
                 >
                 <Text>Take Photo</Text>
               </TouchableOpacity>
